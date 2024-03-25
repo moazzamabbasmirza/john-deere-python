@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success</title>
+</head>
+
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding-top: 10px;
+}
+
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 80%; /* Adjust width as needed */
+    max-width: 400px; /* Add max-width for better readability on larger screens */
+    margin: auto; /* Center the form horizontally */
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input {
+    width: calc(100% - 22px); /* Adjust input width to account for padding and border */
+    padding: 10px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+input[type="submit"] {
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    padding: 12px 20px; /* Add padding for better button appearance */
+    margin-top: 10px; /* Add margin to separate buttons */
+    border: none; /* Remove border for a cleaner look */
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+.file-input-container {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    margin-top: 16px;
+}
+
+.file-input {
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+}
+
+.file-input-label {
+    display: block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.file-input-label:hover {
+    background-color: #0056b3;
+}
+.login-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .login-button:hover {
+            background-color: #45a049;
+        }
+
+        /* Active effect */
+        .login-button:active {
+            background-color: #398439;
+        }
+</style>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        const token = '{{access_token}}'
+        console.log("access_token",token)
+        window.onload = function () {
+            checkAccessToken();
+        };
+        localStorage.setItem("access_token", token);
+        function checkAccessToken() {
+            var accessToken = localStorage.getItem("access_token",token);
+    
+            if (!accessToken) {
+                localStorage.setItem("access_token", token);
+                return;
+            }
+    
+            
+        }
+        function refreshAccessToken() {
+            var refreshToken = localStorage.getItem("refresh_token");
+    
+            if (!refreshToken) {
+                console.error("Error: Missing refresh token in localStorage");
+                return;
+            }
+    
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/token-refresh", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+    
+            xhr.onreadystatechange = function () {
+                
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+    
+                        if (response.access_token) {
+                            console.log("Refreshing access token...");
+                            console.log("New access token:", response.access_token);
+                        } else {
+                            console.error("Error: Access token not found in response.");
+                        }
+                    } else {
+                        console.error("Error refreshing token: " + xhr.status);
+                    }
+                }
+            };
+    
+            xhr.send(JSON.stringify({ refresh_token: refreshToken }));
+        }
+    
+        function redirectToHome(e) {
+            window.location.replace("/");
+        }
+    
+        function callApi(e) {
+    e.preventDefault();
+
+    checkAccessToken(); 
+    var accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+        return;
+    }
+
+    var clientId = document.getElementById("client_id").value;
+    var farmId = document.getElementById("farm_id").value;
+    var fieldId = document.getElementById("field_id").value;
+    var date = document.getElementById("date").value;
+    var title = document.getElementById("map_title").value; 
+    var file_name = document.getElementById("file_Name").value; 
+    console.log("file_name", file_name);
+    makeApiCall(accessToken, clientId, farmId, fieldId, title, date,file_name);
+    make_map_summary_api_call(accessToken, fieldId, title);
+    uploadFile(accessToken,fileId)
+    make_map_layer_api_call(accessToken,title)
+    make_fileId(accessToken,file_name)
+
+}
+
+
+    function makeApiCall(accessToken, clientId, farmId, fieldId, title,date,file_name) {
+    var apiUrl = "/api_call?access_token=" + accessToken +
+        "&client_id=" + clientId +
+        "&farm_id=" + farmId +
+        "&field_id=" + fieldId +
+        "&file_name=" + file_name +
+        "&map_title=" + title +
+        "&date=" + date;
+    console.log("apiUrl", apiUrl);
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", apiUrl, true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+            } else {
+                console.error("Error calling API: " + xhr.status);
+            }
+        }
+    };
+
+    xhr.send();
+}
+
+function make_map_summary_api_call(access_token, field_id, title) {
+    var apiUrl = "/make_map_summary_api_call";
+    var payload = {
+        access_token: access_token,
+        field_id: field_id,
+        title: title
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", apiUrl, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                console.log("Response from make_map_summary_api_call:", response);
+                var headers = xhr.getAllResponseHeaders();
+                console.log("Response Headers:", headers);
+                if (response.result === "success") {
+                    make_map_layer_api_call(access_token, map_layer_summary_id, title);
+                } else {
+                    console.error("Error calling make_map_summary_api_call:", response);
+                }
+            } else {
+                console.error("Error calling make_map_summary_api_call: " + xhr.status);
+            }
+        }
+    };
+
+    xhr.send(JSON.stringify(payload));
+}
+
+function make_map_layer_api_call(access_token, map_layer_summary_id, title) {
+    var apiUrl = "/make_map_summary_api_call";
+    var payload = {
+        access_token: access_token,
+        map_layer_summary_id: map_layer_summary_id,
+        title: title
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", apiUrl, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                console.log("Response from make_map_layer_api_call:", response);
+                var headers = xhr.getAllResponseHeaders();
+                console.log("Response Headers:", headers);
+                if (response.result === "success") {
+                    // Handle successful response
+                } else {
+                    console.error("Error calling make_map_layer_api_call:", response);
+                }
+            } else {
+                console.error("Error calling make_map_layer_api_call: " + xhr.status);
+            }
+        }
+    };
+
+    xhr.send(JSON.stringify(payload));
+}
+
+function make_fileId(access_token, file_name) {
+    var apiUrl = "/fileId";
+    var payload = {
+        access_token: access_token,
+        name: file_name
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", apiUrl, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                console.log("Response from make_map_layer_api_call:", response);
+                var headers = xhr.getAllResponseHeaders();
+                console.log("Response Headers:", headers);
+                if (response.result === "success") {
+                    // Handle successful response
+                } else {
+                    console.error("Error calling make_map_layer_api_call:", response);
+                }
+            } else {
+                console.error("Error calling make_map_layer_api_call: " + xhr.status);
+            }
+        }
+    };
+
+    xhr.send(JSON.stringify(payload));
+}
+function uploadFile(access_token, fileId) {
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput.files.length === 0) {
+        alert("Please select a file.");
+        return;
+    }
+    const file = fileInput.files[0];
+    const url = `/upload_file`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/vnd.deere.axiom.v3+json',
+            'Authorization': `Bearer ${access_token}`, 
+        },
+        body: formData,
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(data);
+        alert("File uploaded or updated successfully!");
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("An error occurred during file upload.");
+    });
+}
+
+    </script>
+</body>
+
+</html>

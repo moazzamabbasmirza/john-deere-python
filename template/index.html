@@ -1,0 +1,38 @@
+    {% extends 'base.html' %}
+
+    {% block content %}
+        {% if is_home_page %}
+            <a href="{{ login_url }}" class="login-button">Authorize with John Deere</a>
+        {% endif %}
+    
+        {% if not is_home_page %}
+        <h1>Map Layer created with Id:{{map_layer_id}}</h1>
+            <form id="apiForm" onsubmit="callApi(event); return false;">
+                <label for="client_id">Client ID:</label>
+                <input type="text" id="client_id" name="client_id">
+    
+                <label for="farm_id">Farm ID:</label>
+                <input type="text" id="farm_id" name="farm_id">
+    
+                <label for="field_id">Field ID:</label>
+                <input type="text" id="field_id" name="field_id">
+                
+                <label for="map_title">Map Title:</label>
+                <input type="text" id="map_title" name="map_title">
+
+                <label for="file_Name">File Name:</label>
+                <input type="text" id="file_Name" name="file_Name">
+
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date">
+    
+                <input type="submit" value="Submit">
+                <form action="/upload_file" method="post" enctype="multipart/form-data" onsubmit="uploadFile()">
+                    <input type="file" name="file">
+                    <input type="submit" value="Upload File">
+                </form>
+            </form>
+
+        {% endif %}
+    {% endblock %}
+    
